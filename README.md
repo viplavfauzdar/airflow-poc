@@ -11,6 +11,47 @@ docker compose up -d
 # UI: http://localhost:8080  (admin / admin)
 ```
 
+## Airflow Setup
+
+The Docker Compose setup spins up several containers to provide a complete Airflow environment:
+
+- **webserver**: Airflow UI for monitoring DAGs, triggering runs, and viewing logs.
+- **scheduler**: Responsible for scheduling and triggering DAG tasks.
+- **worker**: Executes tasks (used with Celery or Kubernetes executors).
+- **triggerer**: Manages deferrable operators and asynchronous events.
+- **postgres**: Airflow metadata database.
+- **redis**: Broker for Celery executor (if enabled).
+- **airflow-init**: Initializes the Airflow database and creates the admin user before other services start.
+
+These services work together in an isolated environment to run Airflow smoothly. Logs for tasks and the scheduler are stored in the `logs/` folder.
+
+### Architecture Diagram
+
+```text
+          +-------------+
+          | airflow-init|  (initializes DB, runs first)
+          +-------------+
+                 |
+                 v
+          +--------------+
+          |   postgres   |<--------------------------------+
+          +--------------+                                 |
+           ^     ^     ^     ^                             |
+           |     |     |     |                             |
++----------+  +--+--+  |  +--+--+          +-------------+ |
+| webserver |  |scheduler|  |triggerer|   |    redis    | |
++----------+  +--+--+  +--+--+          +-------------+ |
+                 |                                   |    |
+                 | tasks                             |    |
+                 +---------------------------------->+    |
+                                                     |    |
+                                                     v    |
+                                                  +--------+
+                                                  | worker |
+                                                  +--------+
+```
+
+
 Turn on both DAGs: **crypto_prices_etl** and **crypto_aggregates**.
 
 ### Optional: configure coins
